@@ -1,0 +1,79 @@
+## gene list Comparison . R
+
+## load packages
+library(plyr)
+library(dplyr)
+library(tidyverse)
+library(compare)
+library(data.table)
+library(limma)
+library(edgeR)
+library(grid)
+library(csaw)
+library(ChIPseeker)
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(clusterProfiler)
+library(AnnotationDbi)
+library(org.Mm.eg.db)
+library(ggplot2)
+library(ggpubr)
+library(GenomicRanges)
+library(DiffBind)
+library(rtracklayer)
+library(Rcpp)
+library(shiny)
+library(annotatr)
+library(snpStats)
+library(GenomicTools.fileHandler)
+library(DOSE)
+library(enrichplot)
+
+## load necessary packages for GenomeDistributionPackage
+library("GenomeInfoDb")
+library("GenomicRanges")
+library("GenomicDistributions")
+library("GenomicDistributionsData")
+library("ExperimentHub")
+library("BSgenome.Mmusculus.UCSC.mm10")
+
+##### loading tGene results #####
+## juv BB TGENE RESULTS
+juvBB_open_tGenes <- read_tsv("juvBBopenDARs_tGeneLinks.tsv")
+juvBB_open_tGenes.1 <- dplyr::distinct(juvBB_open_tGenes)                                 # copy df but only distinct rows
+colnames(juvBB_open_tGenes.1) <- paste(colnames(juvBB_open_tGenes.1), "jBo", sep="_")     # update colnames with condition
+juvBB_open_tGenes.1 <- dplyr::rename(juvBB_open_tGenes.1, Gene_Name = Gene_Name_jBo)      # redefine Gene_Name col for combining
+juvBB_open_tGenes.2 <- dplyr::filter(juvBB_open_tGenes.1, CnD_P_Value_jBo < 0.1)         # only count significant ones
+
+juvBB_clos_tGenes <- read_tsv("juvBBclosedDARs_tGeneLinks.tsv")
+juvBB_clos_tGenes.1 <- dplyr::distinct(juvBB_clos_tGenes)                                 # copy df but only distinct rows
+colnames(juvBB_clos_tGenes.1) <- paste(colnames(juvBB_clos_tGenes.1), "jBc", sep="_")     # update colnames with condition
+juvBB_clos_tGenes.1 <- dplyr::rename(juvBB_clos_tGenes.1, Gene_Name = Gene_Name_jBc)      # redefine Gene_Name col for combining
+juvBB_clos_tGenes.2 <- dplyr::filter(juvBB_clos_tGenes.1, CnD_P_Value_jBc < 0.1)         # only count significant ones
+
+## adult NB TGENE RESULTS
+aduNB_open_tGenes <- read_tsv("adult_nonactivated_TgeneLinks_openDARs_0.01.tsv")
+aduNB_open_tGenes.1 <- dplyr::distinct(aduNB_open_tGenes)                                 # copy df but only distinct rows
+colnames(aduNB_open_tGenes.1) <- paste(colnames(aduNB_open_tGenes.1), "aNo", sep="_")     # update colnames with condition
+aduNB_open_tGenes.1 <- dplyr::rename(aduNB_open_tGenes.1, Gene_Name = Gene_Name_aNo)      # redefine Gene_Name col for combining
+aduNB_open_tGenes.2 <- dplyr::filter(aduNB_open_tGenes.1, CnD_P_Value_aNo < 0.1)         # only count significant ones                                             
+
+aduNB_clos_tGenes <- read_tsv("adult_nonactivated_TgeneLinks_closedDARs_0.01.tsv")
+aduNB_clos_tGenes.1 <- dplyr::distinct(aduNB_clos_tGenes)                                 # copy df but only distinct rows
+colnames(aduNB_clos_tGenes.1) <- paste(colnames(aduNB_clos_tGenes.1), "aNc", sep="_")     # update colnames with condition
+aduNB_clos_tGenes.1 <- dplyr::rename(aduNB_clos_tGenes.1, Gene_Name = Gene_Name_aNc)      # redefine Gene_Name col for combining
+aduNB_clos_tGenes.2 <- dplyr::filter(aduNB_clos_tGenes.1, CnD_P_Value_aNc < 0.1)         # only count significant ones 
+
+##### determining common genes #####
+openR_genes <- dplyr::inner_join(juvBB_open_tGenes.2, aduNB_open_tGenes.2, by = "Gene_Name") %>%
+  dplyr::filter(CnD_P_Value_aNo <= 0.1) %>%
+  drop_na(Gene_Name)
+openR_genes.first <- openR_genes[match(unique(openR_genes$Gene_Name), openR_genes$Gene_Name),]
+
+closR_genes <- dplyr::inner_join(juvBB_clos_tGenes.2, aduNB_clos_tGenes.2, by = "Gene_Name") %>%
+  dplyr::filter(CnD_P_Value_aNc <= 0.1) %>%
+  drop_na(Gene_Name)
+closR_genes.first <- closR_genes[match(unique(closR_genes$Gene_Name), closR_genes$Gene_Name),]
+
+
+write_tsv(openR_genes.first, "sharedGeneList_openR_0.1.tsv")
+write_tsv(closR_genes.first, "sharedGeneList_closR_0.1.tsv")
