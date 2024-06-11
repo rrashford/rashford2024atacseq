@@ -1,0 +1,67 @@
+## load packages
+library(dplyr)
+
+#### LME matrix ####
+## making matrix of normalized counts ##
+normcounts <- read_delim("edgeR_normcounts.tabular")
+peakIDs_to_regions <- read_tsv("peakIDs_and_regionLoci_BBonlyMatrix.tsv")
+normcounts_withRegions <- dplyr::left_join(normcounts, peakIDs_to_regions)
+
+base_name <- c("std_BB_juv",
+               "els_BB_juv",
+               "std_BB_adu",
+               "els_BB_adu")
+
+
+## std adult open DARs
+stdAdultOpenDARs <- dplyr::filter(stdBB_mat, AccState == "open")
+normcounts_stdOpenAdu <- dplyr::left_join(stdAdultOpenDARs, normcounts_withRegions) %>%
+  dplyr::select(-logFC, -logCPM, -F, -PValue, -FDR, -AccState, -peakID)
+
+write.csv(normcounts_stdOpenAdu, "RegionsOpeninAdu_stdBB_forLMM_0.001.csv") ## for nibal's LMM
+
+# initialize empty matrix
+stdAduBBOpen_AvgCountmat <- matrix(NA, 
+                                   nrow(normcounts_stdOpenAdu), 
+                                   length(base_name)
+)
+colnames(stdAduBBOpen_AvgCountmat) <- base_name
+
+for(i in base_name) {
+  print(i)
+  col_idx = grep(i, colnames(normcounts_stdOpenAdu))
+  print(col_idx)
+  stdAduBBOpen_AvgCountmat[, i] <- rowMeans(normcounts_stdOpenAdu[, col_idx])
+}
+write.csv(stdAduBBOpen_AvgCountmat, "avgNormCounts_stdAduBB_openDARs_0.001.csv"
+)
+
+## std juv open DARs
+stdJuvOpenDARs <- dplyr::filter(stdBB_mat, AccState == "closed")
+normcounts_stdOpenJuv <- dplyr::left_join(stdJuvOpenDARs, normcounts_withRegions) %>%
+  dplyr::select(-logFC, -logCPM, -F, -PValue, -FDR, -AccState, -peakID)
+
+write.csv(normcounts_stdOpenJuv, "RegionsOpeninJuv_stdBB_forLMM_0.001.csv") ## for nibal's LMM
+
+
+# initialize empty matrix
+stdJuvBBopen_AvgCountmat <- matrix(NA, 
+                                   nrow(normcounts_stdOpenJuv), 
+                                   length(base_name)
+)
+colnames(stdJuvBBopen_AvgCountmat) <- base_name
+
+for(i in base_name) {
+  print(i)
+  col_idx = grep(i, colnames(normcounts_stdOpenJuv))
+  print(col_idx)
+  stdJuvBBopen_AvgCountmat[, i] <- rowMeans(normcounts_stdOpenJuv[, col_idx])
+}
+write.csv(stdJuvBBopen_AvgCountmat, "avgNormCounts_stdJuvBB_openDARs_0.001.csv"
+)
+  col_idx = grep(i, colnames(normcounts_stdOpenJuv))
+  print(col_idx)
+  stdJuvBBopen_AvgCountmat[, i] <- rowMeans(normcounts_stdOpenJuv[, col_idx])
+}
+write.csv(stdJuvBBopen_AvgCountmat, "avgNormCounts_stdJuvBB_openDARs_0.001.csv"
+)
