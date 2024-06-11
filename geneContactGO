@@ -1,0 +1,29 @@
+#### GO Enrichment #####
+## GO Enrichment on genes predicted to be regulated by regions uniquely from ELS or STD (by T-Gene (https://meme-suite.org/meme/tools/tgene))
+## for GO enrichment (https://yulab-smu.top/biomedical-knowledge-mining-book/enrichplot.html)
+library(DOSE)
+library(enrichplot)
+
+organism <- "org.Mm.eg.db" # set desired organism
+
+## juv BB -- std vs els ##
+
+# OPEN TGENE RESULTS
+juvBB_open_tGenes <- read_tsv("juvBBopenDARs_tGeneLinks.tsv") # T-Gene results file: ELS
+juvBB_open_tGenes_sig <- dplyr::filter(juvBB_open_tGenes, CnD_P_Value <= 0.002)
+
+els_TGene_dist <- juvBB_open_tGenes_sig$CnD_P_Value #get distance p-vals from RE to TSS for GO plotting
+# els_TGene_dist <- na.omit(els_TGene_dist)
+names(els_TGene_dist) <- juvBB_open_tGenes_sig$Gene_Name
+gene_list_els_TGene <- sort(els_TGene_dist, decreasing = TRUE)
+goplot_juvBB_open_TGene <- gseGO(geneList=gene_list_els_TGene, #create gseGO object
+                          ont ="BP", #choose MF, BP, CC ontology
+                          keyType = "SYMBOL", #Input gene list identifiers
+                          minGSSize = 5, #Min ontology set size
+                          maxGSSize = 150,
+                          # pvalueCutoff = 0.05, #Cutoff for significance testing WITHIN program
+                          verbose = TRUE,
+                          OrgDb = organism,
+                          pAdjustMethod = "none") #FDR, BH
+
+write_tsv(goplot_juvBB_open_TGene@result, "juvenile_activated_TgeneNames_openDARs.tsv")
