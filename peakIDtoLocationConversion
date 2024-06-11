@@ -1,0 +1,60 @@
+#### load packages ####
+library(plyr)
+library(dplyr)
+library(tidyverse)
+library(compare)
+library(data.table)
+library(limma)
+library(edgeR)
+library(grid)
+library(csaw)
+library(ChIPseeker)
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(clusterProfiler)
+library(AnnotationDbi)
+library(org.Mm.eg.db)
+library(ggplot2)
+library(ggpubr)
+library(GenomicRanges)
+library(DiffBind)
+library(rtracklayer)
+
+## load necessary packages for GenomeDistributionPackage
+library("GenomeInfoDb")
+library("GenomicRanges")
+library("GenomicDistributions")
+library("GenomicDistributionsData")
+library("ExperimentHub")
+library("BSgenome.Mmusculus.UCSC.mm10")
+
+#### import GFF to identify regions labeled with peakIDs and create data.frame to use #####
+# impot GFF and create RegionLocus variable for chr locations
+consensusPeakset_locations_peakIDs <- read.table("NAc_BB_allSample_masterPeakset.gff",
+                                                 header=FALSE,
+                                                 sep="\t",
+                                                 stringsAsFactors=FALSE,
+                                                 quote="") %>%
+                                                    dplyr::rename(
+                                                      chr = V1,
+                                                      start = V4,
+                                                      end = V5,
+                                                      peakID = V9)
+consensusPeakset_locations_peakIDs$RegionLocus <- ifelse(grep("peak", consensusPeakset_locations_peakIDs$peakID), 
+                                                         str_c(consensusPeakset_locations_peakIDs$chr,":",consensusPeakset_locations_peakIDs$start,"-",consensusPeakset_locations_peakIDs$end), "no")
+
+# make subset dataframe with necessary columns (peakID and RegionLocus) for easier computational load
+peakIDs_and_Locations <- dplyr::select(consensusPeakset_locations_peakIDs, peakID, RegionLocus)
+write_tsv(peakIDs_and_Locations, "BBonly_peakIDs_andLocations_forloopInput_nooutliers.tsv")
+
+# for loop can be run on scotty instead of local machine
+n <- dim(peakIDs_and_Locations)[1]
+for (i in 1:n){
+  # make GeneID in dataframe
+  peakIDs_and_Locations$GeneID[i] <- paste0("peak_",i)
+  # Print progress
+  cat("\rFinished", i, "of", n)}
+
+# save resulting dataframe!!
+write_tsv(peakIDs_and_Locations, "peakIDs_and_regionLoci_BBonlyMatrix.tsv")
+
+
